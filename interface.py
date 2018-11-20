@@ -21,6 +21,9 @@ class Listener_Thread(QThread):
     sessionStarted = QtCore.pyqtSignal()
     sessionEnded = QtCore.pyqtSignal()
 
+    lastMessage = ""
+    receiveBuffer = []
+
     write_flag = False
     read_flag = False
     homing_flag = False
@@ -39,6 +42,8 @@ class Listener_Thread(QThread):
     def sendMessage(self, str):
         self.sendBuffer = str
         self.write_flag = True
+        self.port.write(str)
+        self.port.flush()
     
     def receiveMessage(self):
         self.read_flag = True
@@ -84,13 +89,20 @@ class Listener_Thread(QThread):
 
         self.homing_flag = False
         self.sessionEnded.emit()
+    
 
     def run(self):
         # Listener Code Here
         while(1):
-            if self.homing_flag == True:
-                self.startHoming()
-            self.sleep(1)
+            # if self.homing_flag == True:
+            #     self.startHoming()
+            # self.sleep(1)
+            self.lastMessage = self.port.readline()
+            if self.lastMessage:
+                self.receiveBuffer.append(self.lastMessage)
+
+            if self.receiveBuffer:
+                print(self.receiveBuffer.pop(0))
 
 
 
@@ -129,11 +141,13 @@ if __name__ == '__main__':
         port = Listener_Thread(serial_ports_list[0], read_timeout=7)
         port.sessionEnded.connect(loop.quit)
         time.sleep(1)
-        port.newMessage.connect(newMessageHandler)
         port.start()
-        port.doHoming()
-        loop.exec()
-        port.doHoming()
+        # port.newMessage.connect(newMessageHandler)
+        # port.start()
+        # port.doHoming()
+        # loop.exec()
+        # port.doHoming()
+        port.sendMessage(b"__Start_Session__")
         
     sys.exit(app.exec_())
 
