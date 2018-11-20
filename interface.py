@@ -12,14 +12,65 @@ comm_dict = "__Start_Session__", "__End_Session__","__Send_Toolpath__", "__Empfa
 
 comm_enum = {"Start_Session" : 0, "End_Session" : 1, "Start_Homing" : 2, "Send_Toolpath" : 3, "Empfang_Bestaetigt" : 4, "Receive_Error" : 5, "Receive_Successfull" : 6, "No_Message" : -1}
 
+class Listener_Helper_Class(QThread):
+
+
+    sessionStarted = QtCore.pyqtSignal()
+    sessionEnded = QtCore.pyqtSignal()
+    
+    homing_flag = False
+
+    def __init__(self, port):
+        QThread.__init__(self)  # Ruft den Mutterklassenkonstruktor auf
+        self.port = port
+    
+
+    def __del__(self):
+        self.wait()
+
+    def doHoming(self):
+        self.homing_flag = True
+    
+    def startHoming(self):
+        self.sessionStarted.emit()
+        self.port.sendMessage(b"__Start_Session__")
+
+        while 1:
+            if self.port.messagesAvailable:
+                print(self.port.getMessage())
+                break
+        
+        self.port.sendMessage(b"__Start_Homing__")
+
+        while 1:
+            if self.port.messagesAvailable:
+                tmp = self.port.getMessage()
+                if tmp == "__End_Session__\r\n":
+                    print("Homing Successfull")
+                    break
+                else:
+                    print(tmp)
+
+        self.port.homing_flag = False
+        self.homing_flag = False
+        self.sessionEnded.emit()
+    
+
+    def run(self):
+        while 1:
+            if self.homing_flag == True:
+                self.startHoming()
+            else:
+                self.sleep(1)
+
+
 
 class Listener_Thread(QThread):
 
     newMessage = QtCore.pyqtSignal(str)
     readTimeout = QtCore.pyqtSignal()
 
-    sessionStarted = QtCore.pyqtSignal()
-    sessionEnded = QtCore.pyqtSignal()
+
 
     lastMessage = ""
     receiveBuffer = []
@@ -42,7 +93,6 @@ class Listener_Thread(QThread):
 
     def sendMessage(self, str):
         self.sendBuffer = str
-        self.write_flag = True
         self.port.write(str)
         self.port.flush()
     
@@ -56,40 +106,7 @@ class Listener_Thread(QThread):
         self.homing_flag = False
         print("Timeout")
 
-    def startHoming(self):
-        self.sessionStarted.emit()
-        self.port.write(b"__Start_Session__")
-        self.port.flush()
 
-        msg = self.port.readline()
-        if(msg.decode('ascii') != "__Empfang_Besteatigt__\r\n"):
-            return 
-        elif(msg.decode('ascii') == "__Empfang_Besteatigt__\r\n"):
-            print(msg.decode('ascii'))
-        
-            
-        self.port.write(b"__Start_Homing__")
-        self.port.flush()
-
-        msg = self.port.readline()
-        if(msg.decode('ascii') != "__Empfang_Besteatigt__\r\n"):
-            return 
-        elif(msg.decode('ascii') == "__Empfang_Besteatigt__\r\n"):
-            print(msg.decode('ascii'))
-        msg = self.port.readline()
-        if(msg.decode('ascii') != "Homing\r\n"):
-            return 
-        elif(msg.decode('ascii') == "Homing\r\n"):
-            print(msg.decode('ascii'))
-        
-        msg = self.port.readline()
-        if(msg.decode('ascii') != "__End_Session__\r\n"):
-            return 
-        elif(msg.decode('ascii') == "__End_Session__\r\n"):
-            print(msg.decode('ascii'))
-
-        self.homing_flag = False
-        self.sessionEnded.emit()
     
 
     def getMessage(self):
@@ -105,12 +122,9 @@ class Listener_Thread(QThread):
     def run(self):
         # Listener Code Here
         while(1):
-            # if self.homing_flag == True:
-            #     self.startHoming()
-            # self.sleep(1)
             self.lastMessage = self.port.readline()
             if self.lastMessage:
-                self.receiveBuffer.append(self.lastMessage)
+                self.receiveBuffer.append(self.lastMessage.decode('ascii'))
 
             if self.receiveBuffer:
                 self.messagesAvailable = True
@@ -150,22 +164,23 @@ if __name__ == '__main__':
     if not serial_ports_list:
         print("No Ports available")
     else:
-        loop = QEventLoop()
+        # loop = QEventLoop()
         port = Listener_Thread(serial_ports_list[0], read_timeout=7)
-        port.sessionEnded.connect(loop.quit)
+        helper = Listener_Helper_Class(port)
+        # port.sessionEnded.connect(loop.quit)
         time.sleep(1)
         port.start()
+        helper.start()
         # port.newMessage.connect(newMessageHandler)
         # port.start()
         # port.doHoming()
         # loop.exec()
         # port.doHoming()
-        port.sendMessage(b"__Start_Session__")
+        helper.doHoming()
         while 1:
-            if port.messagesAvailable:
-                print(port.getMessage())
-        
-    sys.exit(app.exec_())
+            time.sleep(1)
+
+        print("End reached")
 
 
 
