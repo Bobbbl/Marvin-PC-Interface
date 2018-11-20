@@ -27,6 +27,7 @@ class Listener_Thread(QThread):
     write_flag = False
     read_flag = False
     homing_flag = False
+    messagesAvailable = False
 
     def __init__(self, port, read_timeout=None, write_timeout=None):
         QThread.__init__(self)  # Ruft den Mutterklassenkonstruktor auf
@@ -91,6 +92,16 @@ class Listener_Thread(QThread):
         self.sessionEnded.emit()
     
 
+    def getMessage(self):
+        if self.receiveBuffer:
+            if len(self.receiveBuffer) <= 1:
+                self.messagesAvailable = False
+            return self.receiveBuffer.pop(0)
+        else:
+            self.messagesAvailable = False
+            return None
+
+
     def run(self):
         # Listener Code Here
         while(1):
@@ -102,7 +113,9 @@ class Listener_Thread(QThread):
                 self.receiveBuffer.append(self.lastMessage)
 
             if self.receiveBuffer:
-                print(self.receiveBuffer.pop(0))
+                self.messagesAvailable = True
+            else:
+                self.messagesAvailable = False
 
 
 
@@ -148,6 +161,9 @@ if __name__ == '__main__':
         # loop.exec()
         # port.doHoming()
         port.sendMessage(b"__Start_Session__")
+        while 1:
+            if port.messagesAvailable:
+                print(port.getMessage())
         
     sys.exit(app.exec_())
 
