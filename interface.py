@@ -6,6 +6,7 @@ import PyQt5
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QThread 
 from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtCore import QTimer, QEventLoop
 
 comm_dict = "__Start_Session__", "__End_Session__","__Send_Toolpath__", "__Empfang_Besteatigt__",  "__Receive_Error__", "__Receive_Successfull__"
 
@@ -16,12 +17,19 @@ class Listener_Thread(QThread):
 
     newMessage = QtCore.pyqtSignal(str)
     readTimeout = QtCore.pyqtSignal()
+
+    sessionStarted = QtCore.pyqtSignal()
+    sessionEnded = QtCore.pyqtSignal()
+
     write_flag = False
     read_flag = False
+    homing_flag = False
 
     def __init__(self, port, read_timeout=None, write_timeout=None):
         QThread.__init__(self)  # Ruft den Mutterklassenkonstruktor auf
         self.port = serial.Serial(port, 115200, timeout=read_timeout, write_timeout=write_timeout)
+        self.resetTimer = QTimer()
+        self.resetTimer.timeout.connect(self.doReset)
         self.sleep(1)
 
 
@@ -35,20 +43,54 @@ class Listener_Thread(QThread):
     def receiveMessage(self):
         self.read_flag = True
 
+    def doHoming(self):
+        self.homing_flag = True
+    
+    def doReset(self):
+        self.homing_flag = False
+        print("Timeout")
+
+    def startHoming(self):
+        self.sessionStarted.emit()
+        self.port.write(b"__Start_Session__")
+        self.port.flush()
+
+        msg = self.port.readline()
+        if(msg.decode('ascii') != "__Empfang_Besteatigt__\r\n"):
+            return 
+        elif(msg.decode('ascii') == "__Empfang_Besteatigt__\r\n"):
+            print(msg.decode('ascii'))
+        
+            
+        self.port.write(b"__Start_Homing__")
+        self.port.flush()
+
+        msg = self.port.readline()
+        if(msg.decode('ascii') != "__Empfang_Besteatigt__\r\n"):
+            return 
+        elif(msg.decode('ascii') == "__Empfang_Besteatigt__\r\n"):
+            print(msg.decode('ascii'))
+        msg = self.port.readline()
+        if(msg.decode('ascii') != "Homing\r\n"):
+            return 
+        elif(msg.decode('ascii') == "Homing\r\n"):
+            print(msg.decode('ascii'))
+        
+        msg = self.port.readline()
+        if(msg.decode('ascii') != "__End_Session__\r\n"):
+            return 
+        elif(msg.decode('ascii') == "__End_Session__\r\n"):
+            print(msg.decode('ascii'))
+
+        self.homing_flag = False
+        self.sessionEnded.emit()
+
     def run(self):
         # Listener Code Here
         while(1):
-            if self.write_flag == True:
-                self.port.write(self.sendBuffer)
-                self.write_flag = False
-            elif self.read_flag == True:
-                msg = self.port.readline()
-                if not msg:
-                    self.readTimeout.emit()
-                    continue
-                self.newMessage.emit(str(msg))
-                if(msg.decode('ascii') == "__End_Session__\r\n"):
-                    self.read_flag = False
+            if self.homing_flag == True:
+                self.startHoming()
+            self.sleep(1)
 
 
 
@@ -83,12 +125,15 @@ if __name__ == '__main__':
     if not serial_ports_list:
         print("No Ports available")
     else:
-        port = Listener_Thread(serial_ports_list[0], read_timeout=1)
+        loop = QEventLoop()
+        port = Listener_Thread(serial_ports_list[0], read_timeout=7)
+        port.sessionEnded.connect(loop.quit)
         time.sleep(1)
         port.newMessage.connect(newMessageHandler)
         port.start()
-        port.sendMessage(b"__Start_Session__")
-        port.receiveMessage()
+        port.doHoming()
+        loop.exec()
+        port.doHoming()
         
     sys.exit(app.exec_())
 
