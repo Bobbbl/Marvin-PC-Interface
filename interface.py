@@ -86,6 +86,8 @@ class Listener_Thread(QThread):
         self.resetTimer = QTimer()
         self.resetTimer.timeout.connect(self.doReset)
         self.sleep(1)
+        self.helper = helper = Listener_Helper_Class(self)
+        self.helper.start()
 
 
     def __del__(self):
@@ -96,18 +98,13 @@ class Listener_Thread(QThread):
         self.port.write(str)
         self.port.flush()
     
-    def receiveMessage(self):
-        self.read_flag = True
-
     def doHoming(self):
         self.homing_flag = True
+        self.helper.doHoming()
     
     def doReset(self):
         self.homing_flag = False
         print("Timeout")
-
-
-    
 
     def getMessage(self):
         if self.receiveBuffer:
@@ -166,17 +163,9 @@ if __name__ == '__main__':
     else:
         # loop = QEventLoop()
         port = Listener_Thread(serial_ports_list[0], read_timeout=7)
-        helper = Listener_Helper_Class(port)
-        # port.sessionEnded.connect(loop.quit)
-        time.sleep(1)
         port.start()
-        helper.start()
-        # port.newMessage.connect(newMessageHandler)
-        # port.start()
-        # port.doHoming()
-        # loop.exec()
-        # port.doHoming()
-        helper.doHoming()
+        port.doHoming()
+        port.doToolpath()
         while 1:
             time.sleep(1)
 
