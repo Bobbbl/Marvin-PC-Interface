@@ -19,6 +19,7 @@ class Listener_Helper_Class(QThread):
     sessionEnded = QtCore.pyqtSignal()
     
     homing_flag = False
+    toolpath_flag = False
 
     def __init__(self, port):
         QThread.__init__(self)  # Ruft den Mutterklassenkonstruktor auf
@@ -55,11 +56,65 @@ class Listener_Helper_Class(QThread):
         self.homing_flag = False
         self.sessionEnded.emit()
     
+    def doToolpath(self):
+        self.toolpath_flag = True
+
+    def startToolpath(self):
+        # Protokoll:
+        # __Start_Session__
+        # __Send_Toolpath__
+        # X123.0 Y123.0 F123.0
+        # X123.0 Y123.0 F123.0
+        # __End_Session__
+        self.sessionStarted.emit()
+        self.port.sendMessage(b"__Start_Session__")
+
+        while 1:
+            if self.port.messagesAvailable:
+                print(self.port.getMessage())
+                break
+
+        self.port.sendMessage(b"__Send_Toolpath__")
+
+        while 1:
+            if self.port.messagesAvailable:
+                print(self.port.getMessage())
+                break
+        
+        self.port.sendMessage(b"X123 Y123.0 F123.0")
+
+        while 1:
+            if self.port.messagesAvailable:
+                tmp = self.port.getMessage()
+                print(tmp)
+                if tmp == "__Receive_Successfull__\r\n":
+                    break
+        
+        self.port.sendMessage(b"X123 Y123.0 F123.0")
+
+        while 1:
+            if self.port.messagesAvailable:
+                tmp = self.port.getMessage()
+                print(tmp)
+                if tmp == "__Receive_Successfull__\r\n":
+                    break
+
+        self.port.sendMessage(b"__End_Session__")
+
+        while 1:
+            if self.port.messagesAvailable:
+                tmp = self.port.getMessage()
+                print(tmp)
+                    
+        
+
 
     def run(self):
         while 1:
             if self.homing_flag == True:
                 self.startHoming()
+            elif self.toolpath_flag == True:
+                self.startToolpath()
             else:
                 self.sleep(1)
 
@@ -101,6 +156,12 @@ class Listener_Thread(QThread):
     def doHoming(self):
         self.homing_flag = True
         self.helper.doHoming()
+
+    def doToolpath(self):
+        self.helper.doToolpath()
+    
+
+
     
     def doReset(self):
         self.homing_flag = False
@@ -164,7 +225,6 @@ if __name__ == '__main__':
         # loop = QEventLoop()
         port = Listener_Thread(serial_ports_list[0], read_timeout=7)
         port.start()
-        port.doHoming()
         port.doToolpath()
         while 1:
             time.sleep(1)
