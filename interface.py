@@ -4,34 +4,56 @@ import serial
 import time
 import PyQt5
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import QThread 
+from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtCore import QTimer, QEventLoop
+import pandas as pd
+import numpy as np
 
-comm_dict = "__Start_Session__", "__End_Session__","__Send_Toolpath__", "__Empfang_Besteatigt__",  "__Receive_Error__", "__Receive_Successfull__"
+comm_dict = "__Start_Session__", "__End_Session__", "__Send_Toolpath__", "__Empfang_Besteatigt__", "__Receive_Error__", "__Receive_Successfull__"
 
-comm_enum = {"Start_Session" : 0, "End_Session" : 1, "Start_Homing" : 2, "Send_Toolpath" : 3, "Empfang_Bestaetigt" : 4, "Receive_Error" : 5, "Receive_Successfull" : 6, "No_Message" : -1}
+comm_enum = {"Start_Session": 0, "End_Session": 1, "Start_Homing": 2, "Send_Toolpath": 3, "Empfang_Bestaetigt": 4,
+             "Receive_Error": 5, "Receive_Successfull": 6, "No_Message": -1}
+
+
+# Imputs CSV-Data from own directory
+# Only FOR MARVIN!!!
+def loadcsvfile():
+    path = "Toolpath.csv"
+    # load dataframe
+    tp_df = pd.read_csv(path, sep=";")
+    X = np.array(tp_df.X)
+    Y = np.array(tp_df.Y)
+    F = np.array(tp_df.F)
+    return [X,Y,F]
+
+def converttotupleofstrings(tl):
+    l = len(tl[0])
+    sl = []
+    for i in range(0, l):
+       sl.append("X{0:.2f} Y{1:.2f} F{2:.2f}".format(tl[0][i], tl[1][i], tl[2][i]))
+    return sl
+
 
 class Listener_Helper_Class(QThread):
 
-
+    toolpath = None
     sessionStarted = QtCore.pyqtSignal()
     sessionEnded = QtCore.pyqtSignal()
-    
+
     homing_flag = False
     toolpath_flag = False
 
     def __init__(self, port):
         QThread.__init__(self)  # Ruft den Mutterklassenkonstruktor auf
         self.port = port
-    
 
     def __del__(self):
         self.wait()
 
     def doHoming(self):
         self.homing_flag = True
-    
+
     def startHoming(self):
         self.sessionStarted.emit()
         self.port.sendMessage(b"__Start_Session__")
@@ -40,7 +62,7 @@ class Listener_Helper_Class(QThread):
             if self.port.messagesAvailable:
                 print(self.port.getMessage())
                 break
-        
+
         self.port.sendMessage(b"__Start_Homing__")
 
         while 1:
@@ -55,8 +77,9 @@ class Listener_Helper_Class(QThread):
         self.port.homing_flag = False
         self.homing_flag = False
         self.sessionEnded.emit()
-    
-    def doToolpath(self):
+
+    def doToolpath(self, toolpath):
+        self.toolpath = toolpath
         self.toolpath_flag = True
 
     def startToolpath(self):
@@ -80,24 +103,48 @@ class Listener_Helper_Class(QThread):
             if self.port.messagesAvailable:
                 print(self.port.getMessage())
                 break
-        
-        self.port.sendMessage(b"X123 Y123.0 F123.0")
 
-        while 1:
-            if self.port.messagesAvailable:
-                tmp = self.port.getMessage()
-                print(tmp)
-                if tmp == "__Receive_Successfull__\r\n":
-                    break
-        
-        self.port.sendMessage(b"X123 Y123.0 F123.0")
+        l = len(self.toolpath)
+        tmp = ""
+        for i in range(0,l):
+            self.port.sendMessage(self.toolpath[i].encode())
 
-        while 1:
-            if self.port.messagesAvailable:
-                tmp = self.port.getMessage()
-                print(tmp)
-                if tmp == "__Receive_Successfull__\r\n":
+            while 1:
+                if self.port.messagesAvailable:
+                    tmp = self.port.getMessage()
+                    print(tmp)
                     break
+                    # if tmp == "__Receive_Successfull__\r\n":
+                    #     break
+                    # if tmp == "__End_Session__\r\n":
+                    #     break
+
+            if tmp == "__End_Session__\r\n":
+                break
+
+            while 1:
+                if self.port.messagesAvailable:
+                    tmp = self.port.getMessage()
+                    print(tmp)
+                    break
+                    # if tmp == "__Point_Reached__\r\n":
+                    #     break
+                    # if tmp == "__End_Session__\r\n":
+                    #     break
+
+            if tmp == "__End_Session__\r\n":
+                break
+
+
+        # self.port.sendMessage(b"X123 Y123.0 F123.0")
+        #
+        # while 1:
+        #     if self.port.messagesAvailable:
+        #         tmp = self.port.getMessage()
+        #         print(tmp)
+        #         if tmp == "__Receive_Successfull__\r\n":
+        #             break
+
 
         self.port.sendMessage(b"__End_Session__")
 
@@ -105,9 +152,6 @@ class Listener_Helper_Class(QThread):
             if self.port.messagesAvailable:
                 tmp = self.port.getMessage()
                 print(tmp)
-                    
-        
-
 
     def run(self):
         while 1:
@@ -119,13 +163,9 @@ class Listener_Helper_Class(QThread):
                 self.sleep(1)
 
 
-
 class Listener_Thread(QThread):
-
     newMessage = QtCore.pyqtSignal(str)
     readTimeout = QtCore.pyqtSignal()
-
-
 
     lastMessage = ""
     receiveBuffer = []
@@ -144,7 +184,6 @@ class Listener_Thread(QThread):
         self.helper = helper = Listener_Helper_Class(self)
         self.helper.start()
 
-
     def __del__(self):
         self.wait()
 
@@ -152,17 +191,14 @@ class Listener_Thread(QThread):
         self.sendBuffer = str
         self.port.write(str)
         self.port.flush()
-    
+
     def doHoming(self):
         self.homing_flag = True
         self.helper.doHoming()
 
-    def doToolpath(self):
-        self.helper.doToolpath()
-    
+    def doToolpath(self, toolpath):
+        self.helper.doToolpath(toolpath)
 
-
-    
     def doReset(self):
         self.homing_flag = False
         print("Timeout")
@@ -176,10 +212,9 @@ class Listener_Thread(QThread):
             self.messagesAvailable = False
             return None
 
-
     def run(self):
         # Listener Code Here
-        while(1):
+        while (1):
             self.lastMessage = self.port.readline()
             if self.lastMessage:
                 self.receiveBuffer.append(self.lastMessage.decode('ascii'))
@@ -190,9 +225,7 @@ class Listener_Thread(QThread):
                 self.messagesAvailable = False
 
 
-
 def list_serial_ports():
-
     if sys.platform.startswith('win'):
         ports = ['COM%s' % (i + 1) for i in range(256)]
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
@@ -213,8 +246,10 @@ def list_serial_ports():
             pass
     return result
 
+
 def newMessageHandler(message):
     print(message)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -222,17 +257,15 @@ if __name__ == '__main__':
     if not serial_ports_list:
         print("No Ports available")
     else:
-        # loop = QEventLoop()
+        tl = loadcsvfile()
+        toolpath = converttotupleofstrings(tl)
+        loop = QEventLoop()
         port = Listener_Thread(serial_ports_list[0], read_timeout=7)
         port.start()
-        port.doToolpath()
+        port.doToolpath(toolpath)
         while 1:
             time.sleep(1)
 
-        print("End reached")
 
 
 
-
-
-            
