@@ -113,11 +113,10 @@ class Listener_Helper_Class(QThread):
                 if self.port.messagesAvailable:
                     tmp = self.port.getMessage()
                     print(tmp)
-                    break
-                    # if tmp == "__Receive_Successfull__\r\n":
-                    #     break
-                    # if tmp == "__End_Session__\r\n":
-                    #     break
+                    if tmp == "__Receive_Successfull__\r\n":
+                        break
+                    if tmp == "__End_Session__\r\n":
+                        break
 
             if tmp == "__End_Session__\r\n":
                 break
@@ -127,23 +126,14 @@ class Listener_Helper_Class(QThread):
                     tmp = self.port.getMessage()
                     print(tmp)
                     break
-                    # if tmp == "__Point_Reached__\r\n":
-                    #     break
-                    # if tmp == "__End_Session__\r\n":
-                    #     break
+                    if tmp == "__Point_Reached__\r\n":
+                        break
+                    if tmp == "__End_Session__\r\n":
+                        break
 
             if tmp == "__End_Session__\r\n":
                 break
 
-
-        # self.port.sendMessage(b"X123 Y123.0 F123.0")
-        #
-        # while 1:
-        #     if self.port.messagesAvailable:
-        #         tmp = self.port.getMessage()
-        #         print(tmp)
-        #         if tmp == "__Receive_Successfull__\r\n":
-        #             break
 
 
         self.port.sendMessage(b"__End_Session__")
