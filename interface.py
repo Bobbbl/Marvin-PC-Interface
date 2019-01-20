@@ -125,7 +125,6 @@ class Listener_Helper_Class(QThread):
                 if self.port.messagesAvailable:
                     tmp = self.port.getMessage()
                     print(tmp)
-                    break
                     if tmp == "__Point_Reached__\r\n":
                         break
                     if tmp == "__End_Session__\r\n":
@@ -136,12 +135,14 @@ class Listener_Helper_Class(QThread):
 
 
 
+        print("Sent __End_Session__")
         self.port.sendMessage(b"__End_Session__")
+        self.toolpath_flag = False
 
-        while 1:
-            if self.port.messagesAvailable:
-                tmp = self.port.getMessage()
-                print(tmp)
+        # while 1:
+        #     if self.port.messagesAvailable:
+        #         tmp = self.port.getMessage()
+        #         print(tmp)
 
     def run(self):
         while 1:
