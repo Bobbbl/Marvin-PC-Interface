@@ -30,28 +30,28 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
 
         # Connections
         # Buttons
-        self.pushButtonDown.clicked(self.pushButtonDown_Clicked)
-        self.pushButtonUp.clicked(self.pushButtonUp_Clicked)
-        self.pushButtonLeft.clicked(self.pushButtonLeft_Clicked)
-        self.pushButtonDown.clicked(self.pushButtonDown_Clicked)
-        self.pushButtonSend.clicked(self.pushButtonSend_Clicked)
+        self.pushButtonDown.clicked.connect(self.pushButtonDown_Clicked)
+        self.pushButtonUp.clicked.connect(self.pushButtonUp_Clicked)
+        self.pushButtonLeft.clicked.connect(self.pushButtonLeft_Clicked)
+        self.pushButtonRight.clicked.connect(self.pushButtonDown_Clicked)
+        self.pushButtonSend.clicked.connect(self.pushButtonSend_Clicked)
 
     def pushButtonDown_Clicked(self):
-        self._Port.sendMessage("XYF 0 -100 " + self.PreFeed)
+        self._Port.sendMessage("XYF 0 -100 " + str(self.PreFeed))
 
     def pushButtonUp_Clicked(self):
-        self._Port.sendMessage("XYF 0 100 " + self.PreFeed)
+        self._Port.sendMessage("XYF 0 100 " + str(self.PreFeed))
 
     def pushButtonLeft_Clicked(self):
-        self._Port.sendMessage("XYF -100 0 " + self.PreFeed)
+        self._Port.sendMessage("XYF -100 0 " + str(self.PreFeed))
 
     def pushButtonRight_Clicked(self):
-        self._Port.sendMessage("XYF 100 0 " + self.PreFeed)
+        self._Port.sendMessage("XYF 100 0 " + str(self.PreFeed))
 
     def pushButtonSend_Clicked(self):
         x = self.lineEditX.text()
         y = self.lineEditY.text()
-        self._Port.sendMessage("XYF " + x + " " + y + self.PreFeed)
+        self._Port.sendMessage("XYF " + x + " " + y + str(self.PreFeed))
 
 
     def list_serial_ports(self):

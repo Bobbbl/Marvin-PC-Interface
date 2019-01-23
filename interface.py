@@ -168,7 +168,7 @@ class Listener_Thread(QThread):
 
     def __init__(self, port, read_timeout=None, write_timeout=None):
         QThread.__init__(self)  # Ruft den Mutterklassenkonstruktor auf
-        self.port = serial.Serial(port, 115200, timeout=read_timeout, write_timeout=write_timeout)
+        self.port = serial.Serial(port, 1000000, timeout=read_timeout, write_timeout=write_timeout)
         self.resetTimer = QTimer()
         self.resetTimer.timeout.connect(self.doReset)
         self.sleep(1)
@@ -178,10 +178,12 @@ class Listener_Thread(QThread):
     def __del__(self):
         self.wait()
 
-    def sendMessage(self, str):
-        self.sendBuffer = str
-        self.port.write(str)
-        self.port.flush()
+    def sendMessage(self, obj):
+        if(isinstance(obj, str)):
+            st_array = bytes(obj, 'utf-8')
+            self.sendBuffer = st_array
+            self.port.write(st_array)
+            self.port.flush()
 
     def doHoming(self):
         self.homing_flag = True
@@ -203,6 +205,7 @@ class Listener_Thread(QThread):
             self.messagesAvailable = False
             return None
 
+
     def run(self):
         # Listener Code Here
         while (1):
@@ -212,6 +215,7 @@ class Listener_Thread(QThread):
 
             if self.receiveBuffer:
                 self.messagesAvailable = True
+                print(self.lastMessage.decode('ascii'))
             else:
                 self.messagesAvailable = False
 
