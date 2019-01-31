@@ -183,7 +183,7 @@ class Listener_Thread(QThread):
             st_array = bytes(obj, 'utf-8')
             self.sendBuffer = st_array
             self.port.write(st_array)
-            self.port.flush()
+            #self.port.flush()
 
     def doHoming(self):
         self.homing_flag = True
@@ -215,7 +215,7 @@ class Listener_Thread(QThread):
 
             if self.receiveBuffer:
                 self.messagesAvailable = True
-                print(self.lastMessage.decode('ascii'))
+                print(self.lastMessage)
             else:
                 self.messagesAvailable = False
 
