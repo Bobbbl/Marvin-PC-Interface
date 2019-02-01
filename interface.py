@@ -168,7 +168,7 @@ class Listener_Thread(QThread):
 
     def __init__(self, port, read_timeout=None, write_timeout=None):
         QThread.__init__(self)  # Ruft den Mutterklassenkonstruktor auf
-        self.port = serial.Serial(port, 1000000, timeout=read_timeout, write_timeout=write_timeout)
+        self.port = serial.Serial(port, 115200, timeout=read_timeout, write_timeout=write_timeout)
         self.resetTimer = QTimer()
         self.resetTimer.timeout.connect(self.doReset)
         self.sleep(1)
@@ -183,7 +183,7 @@ class Listener_Thread(QThread):
             st_array = bytes(obj, 'utf-8')
             self.sendBuffer = st_array
             self.port.write(st_array)
-            #self.port.flush()
+            self.port.flush()
 
     def doHoming(self):
         self.homing_flag = True
@@ -209,15 +209,19 @@ class Listener_Thread(QThread):
     def run(self):
         # Listener Code Here
         while (1):
-            self.lastMessage = self.port.readline()
-            if self.lastMessage:
-                self.receiveBuffer.append(self.lastMessage.decode('ascii'))
+            while self.port.in_waiting:
+                tmp = self.port.readline()
+                print(tmp)
+            # self.lastMessage = self.port.readline()
+            # if self.lastMessage:
+            #     self.receiveBuffer.append(self.lastMessage.decode('ascii'))
+            #
+            # if self.receiveBuffer:
+            #     self.messagesAvailable = True
+            #     print(self.lastMessage)
+            # else:
+            #     self.messagesAvailable = False
 
-            if self.receiveBuffer:
-                self.messagesAvailable = True
-                print(self.lastMessage)
-            else:
-                self.messagesAvailable = False
 
 
 def list_serial_ports():
@@ -246,20 +250,20 @@ def newMessageHandler(message):
     print(message)
 
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    serial_ports_list = list_serial_ports()
-    if not serial_ports_list:
-        print("No Ports available")
-    else:
-        tl = loadcsvfile()
-        toolpath = converttotupleofstrings(tl)
-        loop = QEventLoop()
-        port = Listener_Thread(serial_ports_list[0], read_timeout=7)
-        port.start()
-        port.doToolpath(toolpath)
-        while 1:
-            time.sleep(1)
+# if __name__ == '__main__':
+#     app = QApplication(sys.argv)
+#     serial_ports_list = list_serial_ports()
+#     if not serial_ports_list:
+#         print("No Ports available")
+#     else:
+#         tl = loadcsvfile()
+#         toolpath = converttotupleofstrings(tl)
+#         loop = QEventLoop()
+#         port = Listener_Thread(serial_ports_list[0], read_timeout=1, write_timeout=1)
+#         port.start()
+#         port.doToolpath(toolpath)
+#         while 1:
+#             time.sleep(1)
 
 
 

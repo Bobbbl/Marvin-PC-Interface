@@ -23,7 +23,7 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         if not serial_ports_list:
             print("No Ports Available")
         else:
-          self._Port = Listener_Thread(serial_ports_list[0], read_timeout=7)
+          self._Port = Listener_Thread(serial_ports_list[0], read_timeout=7, write_timeout=7)
           self._Port.start()
 
 
