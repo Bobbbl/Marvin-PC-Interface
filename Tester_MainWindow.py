@@ -35,23 +35,33 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         self.pushButtonLeft.clicked.connect(self.pushButtonLeft_Clicked)
         self.pushButtonRight.clicked.connect(self.pushButtonDown_Clicked)
         self.pushButtonSend.clicked.connect(self.pushButtonSend_Clicked)
+        self.pushButtonSpindel_2.clicked.connect(self.pushButtonSpindel_Clicked)
+        self.pushButtonPumpe.clicked.connect(self.pushButtonPumpe_Clicked)
+
+    def pushButtonSpindel_Clicked(self):
+        tmp = "S;" + str(self.lineEditSpindel.text()) + "@"
+        self._Port.sendMessage(tmp)
+
+    def pushButtonPumpe_Clicked(self):
+        tmp = "P;" + str(self.lineEditPolierpumpe.text()) + "@"
+        self._Port.sendMessage(tmp)
 
     def pushButtonDown_Clicked(self):
-        self._Port.sendMessage("XYF;0;-100;" + str(self.PreFeed) + ";")
+        self._Port.sendMessage("XYF;0;100;" + str(self.PreFeed)+ "@")
 
     def pushButtonUp_Clicked(self):
-        self._Port.sendMessage("XYF;0;100;" + str(self.PreFeed) + ";")
+        self._Port.sendMessage("XYF;0;-100;" + str(self.PreFeed) + "@")
 
     def pushButtonLeft_Clicked(self):
-        self._Port.sendMessage("XYF;-100;0;" + str(self.PreFeed) + ";")
+        self._Port.sendMessage("XYF;-100;0;" + str(self.PreFeed) + "@")
 
     def pushButtonRight_Clicked(self):
-        self._Port.sendMessage("XYF;100;0;" + str(self.PreFeed) + ";")
+        self._Port.sendMessage("XYF;100;0;" + str(self.PreFeed) + "@")
 
     def pushButtonSend_Clicked(self):
         x = self.lineEditX.text()
         y = self.lineEditY.text()
-        self._Port.sendMessage("XYF;" + x + ";" + y + ";" + str(self.PreFeed) + ";")
+        self._Port.sendMessage("XYF;" + x + ";" + y + ";" + str(self.PreFeed) + "@")
 
 
     def list_serial_ports(self):
