@@ -35,7 +35,7 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         self.pushButtonLeft.clicked.connect(self.pushButtonLeft_Clicked)
         self.pushButtonRight.clicked.connect(self.pushButtonDown_Clicked)
         self.pushButtonSend.clicked.connect(self.pushButtonSend_Clicked)
-        self.pushButtonSpindel_2.clicked.connect(self.pushButtonSpindel_Clicked)
+        self.pushButtonSpindel.clicked.connect(self.pushButtonSpindel_Clicked)
         self.pushButtonPumpe.clicked.connect(self.pushButtonPumpe_Clicked)
 
     def pushButtonSpindel_Clicked(self):
@@ -59,9 +59,13 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         self._Port.sendMessage("XYF;1;0;" + str(self.PreFeed) + "@")
 
     def pushButtonSend_Clicked(self):
-        x = self.lineEditX.text()
-        y = self.lineEditY.text()
-        self._Port.sendMessage("XYF;" + x + ";" + y + ";" + str(self.PreFeed) + "@")
+        if any(char.isdigit() for char in self.lineEditX.text()):
+            x = self.lineEditX.text()
+        if any(char.isdigit() for char in self.lineEditY.text()):
+            y = self.lineEditY.text()
+        if any(char.isdigit() for char in self.lineEditFeed.text()):
+            feed = self.lineEditFeed.text()
+        self._Port.sendMessage("XYF;" + x + ";" + y + ";" + feed + "@")
 
 
     def list_serial_ports(self):

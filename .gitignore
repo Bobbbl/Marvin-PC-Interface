@@ -2,3 +2,4 @@
 Toolpath.csv
 pandas/
 .idea/
+__pycache__/
