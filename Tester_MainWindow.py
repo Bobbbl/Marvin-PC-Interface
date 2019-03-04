@@ -6,7 +6,7 @@ import glob
 from interface import Listener_Thread
 
 
-
+# noinspection PyPep8Naming
 class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
     def __init__(self, parent=None):
         super(Tester_Mainwindow, self).__init__(parent)
@@ -23,10 +23,8 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         if not serial_ports_list:
             print("No Ports Available")
         else:
-          self._Port = Listener_Thread(serial_ports_list[0], read_timeout=7, write_timeout=7)
-          self._Port.start()
-
-
+            self._Port = Listener_Thread(serial_ports_list[0], read_timeout=7, write_timeout=7)
+            self._Port.start()
 
         # Connections
         # Buttons
@@ -37,6 +35,11 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         self.pushButtonSend.clicked.connect(self.pushButtonSend_Clicked)
         self.pushButtonSpindel.clicked.connect(self.pushButtonSpindel_Clicked)
         self.pushButtonPumpe.clicked.connect(self.pushButtonPumpe_Clicked)
+        self.pushButtonStop.click.connect(self.pushButtonStop_Clicked)
+
+    def pushButtonStop_Clicked(self):
+        tmp = "STOP@"
+        self._Port.sendMessage(tmp)
 
     def pushButtonSpindel_Clicked(self):
         tmp = "S;" + str(self.lineEditSpindel.text()) + "@"
@@ -47,7 +50,7 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         self._Port.sendMessage(tmp)
 
     def pushButtonDown_Clicked(self):
-        self._Port.sendMessage("XYF;0;1;" + str(self.PreFeed)+ "@")
+        self._Port.sendMessage("XYF;0;1;" + str(self.PreFeed) + "@")
 
     def pushButtonUp_Clicked(self):
         self._Port.sendMessage("XYF;0;-1;" + str(self.PreFeed) + "@")
@@ -66,7 +69,6 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         if any(char.isdigit() for char in self.lineEditFeed.text()):
             feed = self.lineEditFeed.text()
         self._Port.sendMessage("XYF;" + x + ";" + y + ";" + feed + "@")
-
 
     def list_serial_ports(self):
         if sys.platform.startswith('win'):
