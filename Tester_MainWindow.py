@@ -41,8 +41,84 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         self.pushButtonExcel.clicked.connect(self.pushButtonExcel_Clicked)
 
     def pushButtonExcel_Clicked(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "Image files (*.csv)")
-        pd.read_csv(fname)
+        fname = QFileDialog.getOpenFileName(self, 'Open file', 'C:\\Users\\sebas\\source\\repos\\Marvin-PC-Interface', "CSV (*.csv);;Text (*.txt)")
+        data = []
+
+        try:
+            data = pd.read_csv(fname[0])
+        except:
+            print("Reading File was not successful")
+
+        if "csv" in fname[0]:
+            tmp = "XYF" + ";" + str(data["X"][0]) + ";" + str(data["Y"][0]) + ";" + str(data["F"][0]) + "@"
+            self._Port.sendMessage(tmp)
+            tmp = "XYF" + ";" + str(data["X"][1 + 1]) + ";" + str(data["Y"][1 + 1]) + ";" + str(data["F"][1 + 1]) + "@"
+            self._Port.sendMessage(tmp)
+            tmp = "XYF" + ";" + str(data["X"][2 + 2]) + ";" + str(data["Y"][2 + 2]) + ";" + str(data["F"][2 + 2]) + "@"
+            self._Port.sendMessage(tmp)
+            r = str(self._Port.getMessage())
+            count = 0
+            while count >= 3:
+                r = str(self._Port.getMessage())
+                if "ACK" not in r:
+                    pass
+                else:
+                    print(r)
+                    count = count + 1
+
+            for i in range(3, data.shape[0]):
+                tmp = "XYF" + ";" + str(data["X"][i]) + ";" + str(data["Y"][i]) + ";" + str(data["F"][i]) + "@"
+                self._Port.sendMessage(tmp)
+
+                r = str(self._Port.getMessage())
+                count = 0
+                while True:
+                    r = str(self._Port.getMessage())
+                    if "ACK" not in r:
+                        pass
+                    else:
+                        print(r)
+                        print(i)
+                        break
+        else:
+            with open(fname[0]) as f:
+                content = f.readlines()
+            for i in range(0, len(content)):
+                content[i] = content[i].strip()
+            tmp = content[0] + "@"
+            self._Port.sendMessage(tmp)
+            tmp = content[1] + "@"
+            self._Port.sendMessage(tmp)
+            tmp = content[2] + "@"
+            self._Port.sendMessage(tmp)
+
+            r = str(self._Port.getMessage())
+            count = 0
+            while count >= 3:
+                r = str(self._Port.getMessage())
+                if "ACK" not in r:
+                    pass
+                else:
+                    print(r)
+                    count = count + 1
+
+            for i in range(3, data.shape[0]+1):
+                tmp = content[i] + "@"
+                self._Port.sendMessage(tmp)
+
+                r = str(self._Port.getMessage())
+                count = 0
+                while True:
+                    r = str(self._Port.getMessage())
+                    if "ACK" not in r:
+                        pass
+                    else:
+                        print(r)
+                        print(i)
+                        break
+
+
+
 
     def pushButtonStop_Clicked(self):
         tmp = "STOP@"

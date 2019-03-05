@@ -211,7 +211,11 @@ class Listener_Thread(QThread):
         while (1):
             while self.port.in_waiting:
                 tmp = self.port.readline()
-                print(tmp)
+                self.receiveBuffer.append(tmp)
+                if "ACK" not in str(tmp):
+                    print(tmp)
+                if len(self.receiveBuffer) > 150:
+                    del self.receiveBuffer[-1]
             # self.lastMessage = self.port.readline()
             # if self.lastMessage:
             #     self.receiveBuffer.append(self.lastMessage.decode('ascii'))
