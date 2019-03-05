@@ -212,7 +212,7 @@ class Listener_Thread(QThread):
             while self.port.in_waiting:
                 tmp = self.port.readline()
                 self.receiveBuffer.append(tmp)
-                if "ACK" not in str(tmp):
+                if "ACK XYF" not in str(tmp):
                     print(tmp)
                 if len(self.receiveBuffer) > 150:
                     del self.receiveBuffer[-1]
