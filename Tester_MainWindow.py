@@ -1,7 +1,5 @@
 import sys
-
 from PyQt5.QtWidgets import QFileDialog
-
 import tester
 from PyQt5 import QtGui, QtWidgets, QtCore
 import serial
@@ -39,8 +37,8 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         self.pushButtonSend.clicked.connect(self.pushButtonSend_Clicked)
         self.pushButtonSpindel.clicked.connect(self.pushButtonSpindel_Clicked)
         self.pushButtonPumpe.clicked.connect(self.pushButtonPumpe_Clicked)
-        self.pushButtonStop.click.connect(self.pushButtonStop_Clicked)
-        self.pushButtonExcel.click.connect(self.pushButtonExcel_Clicked)
+        self.pushButtonStop.clicked.connect(self.pushButtonStop_Clicked)
+        self.pushButtonExcel.clicked.connect(self.pushButtonExcel_Clicked)
 
     def pushButtonExcel_Clicked(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "Image files (*.csv)")
