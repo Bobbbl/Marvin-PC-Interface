@@ -205,6 +205,9 @@ class Listener_Thread(QThread):
             self.messagesAvailable = False
             return None
 
+    def flushReceiveBuffer(self):
+        self.receiveBuffer.clear()
+
 
     def run(self):
         # Listener Code Here
@@ -212,7 +215,7 @@ class Listener_Thread(QThread):
             while self.port.in_waiting:
                 tmp = self.port.readline()
                 self.receiveBuffer.append(tmp)
-                if "ACK XYF" not in str(tmp):
+                if "ACK" not in str(tmp) and "Reached" not in str(tmp):
                     print(tmp)
                 if len(self.receiveBuffer) > 150:
                     del self.receiveBuffer[-1]

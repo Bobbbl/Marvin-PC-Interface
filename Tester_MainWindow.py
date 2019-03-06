@@ -91,7 +91,7 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
             self._Port.sendMessage(tmp)
             tmp = content[2] + "@"
             self._Port.sendMessage(tmp)
-
+            self._Port.flushReceiveBuffer()
             r = str(self._Port.getMessage())
             count = 0
             while count >= 3:
@@ -110,9 +110,7 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
                 count = 0
                 while True:
                     r = str(self._Port.getMessage())
-                    if "ACK" not in r:
-                        pass
-                    else:
+                    if ("Reached" in r) or ("ACK" in r and "XYF" not in r):
                         print(r)
                         print(i)
                         break
