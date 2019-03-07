@@ -14,7 +14,7 @@ then
 fi
 
 
-if [ "$OSTYPE" != 'mstype' ] 
+if [ "$OSTYPE" != 'msys' ] 
 then
 	wget -q --spider http://google.com
 	if [ $? -eq 0 ]
