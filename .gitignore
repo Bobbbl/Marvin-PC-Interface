@@ -1,7 +1,6 @@
 .vscode/
 Toolpath.csv
 pandas/
-.idea/
 __pycache__/
 .vscode
 *.spec
