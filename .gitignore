@@ -4,3 +4,4 @@ pandas/
 __pycache__/
 .vscode
 *.spec
+.idea
