@@ -85,35 +85,53 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
                 content = f.readlines()
             for i in range(0, len(content)):
                 content[i] = content[i].strip()
-            tmp = content[0] + "@"
-            self._Port.sendMessage(tmp)
-            tmp = content[1] + "@"
-            self._Port.sendMessage(tmp)
-            tmp = content[2] + "@"
-            self._Port.sendMessage(tmp)
-            self._Port.flushReceiveBuffer()
-            r = str(self._Port.getMessage())
-            count = 0
-            while count >= 3:
-                r = str(self._Port.getMessage())
-                if "ACK" not in r:
-                    pass
-                else:
-                    print(r)
-                    count = count + 1
-
-            for i in range(3, data.shape[0]+1):
-                tmp = content[i] + "@"
+                tmp = content[i];
+                self._Port.flushReceiveBuffer()
                 self._Port.sendMessage(tmp)
-
                 r = str(self._Port.getMessage())
-                count = 0
+                dirtyhackflag = 0
                 while True:
+                    if "XYF" in tmp:
+                        if "Reached X" in r:
+                            dirtyhackflag = dirtyhackflag + 1
+                            if dirtyhackflag >=2:
+                                print(r)
+                                break
+                    else:
+                        if "ACK" in r:
+                            break
+                    print(r)
                     r = str(self._Port.getMessage())
-                    if ("Reached" in r) or ("ACK" in r and "XYF" not in r):
-                        print(r)
-                        print(i)
-                        break
+            # tmp = content[0] + "@"
+            # self._Port.sendMessage(tmp)
+            # tmp = content[1] + "@"
+            # self._Port.sendMessage(tmp)
+            # tmp = content[2] + "@"
+            # self._Port.sendMessage(tmp)
+            # self._Port.flushReceiveBuffer()
+            # r = str(self._Port.getMessage())
+            # count = 0
+            # while count >= 3:
+            #     r = str(self._Port.getMessage())
+            #     if "ACK" not in r:
+            #         pass
+            #     else:
+            #         print(r)
+            #         count = count + 1
+            #
+            # for i in range(3, data.shape[0]+1):
+            #     tmp = content[i] + "@"
+            #     self._Port.sendMessage(tmp)
+            #
+            #     r = str(self._Port.getMessage())
+            #     count = 0
+            #     while True:
+            #         r = str(self._Port.getMessage())
+            #         if ("Reached" in r) or ("ACK" in r and "XYF" not in r):
+            #             print(r)
+            #             print(i)
+            #             break
+
 
 
 
@@ -131,16 +149,16 @@ class Tester_Mainwindow(QtWidgets.QDialog, tester.Ui_Form):
         self._Port.sendMessage(tmp)
 
     def pushButtonDown_Clicked(self):
-        self._Port.sendMessage("XYF;0;1;100@" + str(self.PreFeed) + "@")
+        self._Port.sendMessage("XYF;0;1;100@")
 
     def pushButtonUp_Clicked(self):
-        self._Port.sendMessage("XYF;0;-1;100@" + str(self.PreFeed) + "@")
+        self._Port.sendMessage("XYF;0;-1;100@")
 
     def pushButtonLeft_Clicked(self):
-        self._Port.sendMessage("XYF;-1;0;100@" + str(self.PreFeed) + "@")
+        self._Port.sendMessage("XYF;-1;0;100@")
 
     def pushButtonRight_Clicked(self):
-        self._Port.sendMessage("XYF;1;0;100@" + str(self.PreFeed) + "@")
+        self._Port.sendMessage("XYF;1;0;100@")
 
     def pushButtonSend_Clicked(self):
         if any(char.isdigit() for char in self.lineEditX.text()):
