@@ -3,12 +3,13 @@ import QtQuick.Window 2.2
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.5
 
-Page {
+Window {
     id: window
     visible: true
     width: 640
     height: 300
     title: qsTr("Hello World")
+
 
     signal upbutton_pressed;
     signal downbutton_pressed;
@@ -16,7 +17,7 @@ Page {
     signal rightbutton_pressed;
     signal stopbutton_pressed;
 
-    RowLayout{
+    Row{
         id: mainlayout
         anchors.fill: parent
         spacing: 2
@@ -24,15 +25,12 @@ Page {
         /*Linkes Layout*/
         ColumnLayout{
             id: leftlayout
+            Layout.row: 0
             spacing: 2
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
 
             /*Steuerkreuz*/
             GridLayout{
                 id: steuerkreuz
-                anchors.top: parent.top
-                //anchors.fill: parent
                 columns: 3
                 rows: 3
 
@@ -87,17 +85,40 @@ Page {
             /*Excel Button*/
             Button{
                 id: toolpathbutton
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
+                anchors.left: steuerkreuz.left
+                anchors.right: steuerkreuz.right
+
+
+                Layout.row: 1
                 text: "Send Toolpath"
             }
 
 
+        } // End Left Layout
+
+    Column{
+        spacing: 2
+        Layout.column: 1
+        anchors.right: window.right
+
+        RowLayout{
+
+            spacing: 5
+            ComboBox{
+                id: portsspinbox
+                model: myModel
+
+            }
+
+            Button{
+                id: connectbutton
+                text: "Connect"
+
+            }
+
         }
-
-        /*Rechtes Layout*/
-
     }
+
+    } // End MainLayout (Row)
 
 }
