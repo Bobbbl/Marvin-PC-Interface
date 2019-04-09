@@ -4,37 +4,61 @@ import glob
 import sys
 from PySide2.QtQuick import QQuickView
 from PySide2.QtCore import QAbstractListModel, Qt, QUrl, QStringListModel, QThread, Signal, QTimer, QObject
+from PySide2 import QtCore
 from PySide2.QtGui import QGuiApplication
 from PySide2.QtQml import QQmlProperty, QQmlApplicationEngine
 import serial
 
 
+class PortList(QObject):
+
+    listChanged = Signal()
+
+    def __init__(self, llist):
+        QObject.__init__(self)
+        self.llist = llist
+
+    def _appendPort(self, port):
+        self.llist.append(port)
+        self.listChanged.emit()
+
+
+    def _setPortList(self, list):
+        self.llist = list
+        self.listChanged.emit()
+
+    def _getPortList(self):
+        return self.llist
+
+    pList = QtCore.Property('QStringList', _getPortList, '', notify=listChanged)
+
+
 class PortInterface(QThread, QObject):
     newMessageReceived = Signal(str)
     messageSent = Signal(str)
-    portslist = []
+    portsList = []
 
-    def __init__(self, rootobject, engine):
+    def __init__(self, rootObject, view):
         QObject.__init__(self)
         #self.port = serial.Serial(port, 115200, write_timeout=0.1)
-        self.rootobject = rootobject
-        self.portslist = QStringListModel()
-        self.portslist.setStringList(["hi", "ho"])
-        self.engine = engine
-        self.engine.rootContext().setContextProperty("myModel", self.portslist)
+        self.rootObject = rootObject
 
 
         # Timer
         self.portTimer = QTimer()
 
+        self.plist = PortList(llist=["1", "2"])
+
+        view.rootContext().setContextProperty("Interface", self.plist)
+
 
 
         # Connections
-        self.rootobject.upbutton_pressed.connect(self.upbutton_handler)
-        self.rootobject.downbutton_pressed.connect(self.downbutton_handler)
-        self.rootobject.leftbutton_pressed.connect(self.leftbutton_handler)
-        self.rootobject.rightbutton_pressed.connect(self.rightbutton_handler)
-        self.rootobject.stopbutton_pressed.connect(self.stopbutton_handler)
+        self.rootObject.upbutton_pressed.connect(self.upbutton_handler)
+        self.rootObject.downbutton_pressed.connect(self.downbutton_handler)
+        self.rootObject.leftbutton_pressed.connect(self.leftbutton_handler)
+        self.rootObject.rightbutton_pressed.connect(self.rightbutton_handler)
+        self.rootObject.stopbutton_pressed.connect(self.stopbutton_handler)
         self.portTimer.timeout.connect(self.portTimer_timeout)
         self.sleep(1)
         self.portTimer.start(500)
@@ -46,10 +70,9 @@ class PortInterface(QThread, QObject):
 
 
     def portTimer_timeout(self):
-        #list = self.serial_ports()
-        list = ["a", "b"]
-        self.portslist.setStringList(list)
-        print(list)
+        list = self.serial_ports()
+
+        self.plist._setPortList(list)
 
 
 
@@ -89,13 +112,13 @@ class PortInterface(QThread, QObject):
             self.messageSent.emit(message)
 
     def setProp(self, objName, propName, value):
-        obj = self.rootobject.findChild(QObject, objName)
+        obj = self.rootObject.findChild(QObject, objName)
         p = QQmlProperty(obj, propName)
         p.write(value)
 
 
     def setPropList(self, objName, propName, values):
-        obj = self.rootobject.findChild(QObject, objName)
+        obj = self.rootObject.findChild(QObject, objName)
         property = QQmlProperty(obj, propName)
         property.write(values)
 
@@ -117,16 +140,28 @@ class PortInterface(QThread, QObject):
 
 if __name__ == "__main__":
     app = QGuiApplication(sys.argv)
-    #view = QQuickView()
-    engine = QQmlApplicationEngine()
+    view = QQuickView()
     qml_file = os.path.join(os.path.dirname(__file__), 'main.qml')
-    engine.load('QML_Interface\main.qml')
+    view.setSource(QUrl.fromLocalFile(os.path.abspath(qml_file)))
+    view.setResizeMode(QQuickView.SizeRootObjectToView)
 
-    rootobject = engine.rootObjects()[0]
 
-    interface = PortInterface(rootobject, engine)
 
-    if not engine.rootObjects():
+    # engine = QQmlApplicationEngine()
+
+    # engine.load('QML_Interface\main.qml')
+
+    # rootobject = engine.rootObjects()[0]
+    rootObject = view.rootObject()
+    interface = PortInterface(rootObject, view)
+
+    if view.status() == QQuickView.Error:
         sys.exit(-1)
-    sys.exit(app.exec_())
+
+    view.show()
+    app.exec_()
+    del view
+    # if not engine.rootObjects():
+        # sys.exit(-1)
+    # sys.exit(app.exec_())
 

@@ -3,7 +3,7 @@ import QtQuick.Window 2.2
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.5
 
-Window {
+Page {
     id: window
     visible: true
     width: 640
@@ -106,7 +106,7 @@ Window {
             spacing: 5
             ComboBox{
                 id: portsspinbox
-                model: myModel
+                model: Interface.pList
 
             }
 
