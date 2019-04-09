@@ -8,13 +8,15 @@ from PySide2 import QtCore
 from PySide2.QtGui import QGuiApplication
 from PySide2.QtQml import QQmlProperty, QQmlApplicationEngine
 import serial
+from PySide2.QtWidgets import QFileDialog
+import re
 
 
 class PortList(QObject):
 
     listChanged = Signal()
 
-    def __init__(self, llist):
+    def __init__(self, llist=[]):
         QObject.__init__(self)
         self.llist = llist
 
@@ -32,26 +34,50 @@ class PortList(QObject):
 
     pList = QtCore.Property('QStringList', _getPortList, '', notify=listChanged)
 
+class LogList(QObject):
+
+    listChanged = Signal()
+
+    def __init__(self, llist=[]):
+        QObject.__init__(self)
+        self.llist = llist
+
+    def _appendLog(self, port):
+        self.llist.append(port)
+        self.listChanged.emit()
+
+
+    def _deleteLog(self, list):
+        self.llist = list
+        self.listChanged.emit()
+
+    def _getList(self):
+        return self.llist
+
+    logList = QtCore.Property('QStringList', _getList, '', notify=listChanged)
+
+
 
 class PortInterface(QThread, QObject):
     newMessageReceived = Signal(str)
     messageSent = Signal(str)
     portsList = []
 
+
     def __init__(self, rootObject, view):
         QObject.__init__(self)
         #self.port = serial.Serial(port, 115200, write_timeout=0.1)
+        self.port = None
         self.rootObject = rootObject
-
+        self.currentPort = None
+        self.connectedFlag = False
 
         # Timer
         self.portTimer = QTimer()
 
-        self.plist = PortList(llist=["1", "2"])
+        self.plist = PortList()
 
         view.rootContext().setContextProperty("Interface", self.plist)
-
-
 
         # Connections
         self.rootObject.upbutton_pressed.connect(self.upbutton_handler)
@@ -59,6 +85,9 @@ class PortInterface(QThread, QObject):
         self.rootObject.leftbutton_pressed.connect(self.leftbutton_handler)
         self.rootObject.rightbutton_pressed.connect(self.rightbutton_handler)
         self.rootObject.stopbutton_pressed.connect(self.stopbutton_handler)
+        self.rootObject.portChanged.connect(self.portsspinbox_handler)
+        self.rootObject.connectbutton_pressed.connect(self.connectbutton_handler)
+        self.rootObject.sendtoolpathbutton_pressed.connect(self.sendtoolpathbutton_handler)
         self.portTimer.timeout.connect(self.portTimer_timeout)
         self.sleep(1)
         self.portTimer.start(500)
@@ -67,6 +96,49 @@ class PortInterface(QThread, QObject):
         while (1):
             tmp = self.port.readline()
             self.newMessageReceived.emit(tmp)
+
+    def sendtoolpathbutton_handler(self, path):
+        if not self.connectedFlag:
+            print("Not Connected")
+            return
+
+        data = []
+        path = re.sub(r'file:///', '', path)
+        print(path)
+
+        with open(path) as f:
+            content = f.readlines()
+            for i in range(0, len(content)-1):
+                content[i] = content[i].strip()
+                tmp = content[i]
+                self.sendMessage(tmp)
+                r = str(self.port.readline())
+                while True:
+                    if "End" in r or "Reached" in r:
+                        print(r)
+                        break
+                    else:
+                        print(r)
+                        r = str(self.port.readline())
+
+
+    def sendMessage(self, message):
+        if (isinstance(message, str)):
+            st_array = bytes(message, 'utf-8')
+            self.port.write(st_array)
+            self.port.flush()
+
+
+    def portsspinbox_handler(self, name):
+        self.currentPort = name
+
+    def connectbutton_handler(self):
+        if self.currentPort is not None:
+            try:
+                self.port = serial.Serial(self.currentPort, 115200, write_timeout=0.1)
+                self.connectedFlag = True
+            except:
+                print("Not Connected")
 
 
     def portTimer_timeout(self):
@@ -111,16 +183,6 @@ class PortInterface(QThread, QObject):
             self.port.flush()
             self.messageSent.emit(message)
 
-    def setProp(self, objName, propName, value):
-        obj = self.rootObject.findChild(QObject, objName)
-        p = QQmlProperty(obj, propName)
-        p.write(value)
-
-
-    def setPropList(self, objName, propName, values):
-        obj = self.rootObject.findChild(QObject, objName)
-        property = QQmlProperty(obj, propName)
-        property.write(values)
 
     def upbutton_handler(self):
         print("Up")

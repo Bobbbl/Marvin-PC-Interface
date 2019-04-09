@@ -2,6 +2,7 @@ import QtQuick 2.9
 import QtQuick.Window 2.2
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.5
+import QtQuick.Dialogs 1.0
 
 Page {
     id: window
@@ -16,10 +17,13 @@ Page {
     signal leftbutton_pressed;
     signal rightbutton_pressed;
     signal stopbutton_pressed;
+    signal sendtoolpathbutton_pressed(string path);
+    signal portChanged(string name);
+    signal connectbutton_pressed;
 
     Row{
         id: mainlayout
-        anchors.fill: parent
+        //anchors.fill: parent
         spacing: 2
 
         /*Linkes Layout*/
@@ -83,6 +87,7 @@ Page {
             }
 
             /*Excel Button*/
+
             Button{
                 id: toolpathbutton
                 anchors.left: steuerkreuz.left
@@ -91,34 +96,85 @@ Page {
 
                 Layout.row: 1
                 text: "Send Toolpath"
+
+                onClicked:{
+
+
+                    filedialog.open()
+
+                }
             }
+
+            FileDialog{
+                id: filedialog
+                title: "Chose A Toolpath File"
+                onAccepted: {
+
+                    sendtoolpathbutton_pressed(this.fileUrl)
+                }
+            }
+
+            RowLayout {
+                id: rowLayout
+                width: 100
+                height: 100
+
+                Button {
+                    id: spindelbutton
+                    text: qsTr("Spindel")
+                }
+
+                TextEdit {
+                    id: spindeltext
+
+                    Layout.fillWidth: true
+                    text: qsTr("0")
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 12
+                }
+            }
+
 
 
         } // End Left Layout
 
-    Column{
-        spacing: 2
-        Layout.column: 1
-        anchors.right: window.right
+        Column{
+            spacing: 2
+            Layout.column: 1
+            anchors.right: window.right
 
-        RowLayout{
+            RowLayout{
 
-            spacing: 5
-            ComboBox{
-                id: portsspinbox
-                model: Interface.pList
+                spacing: 5
+                ComboBox{
+                    id: portsspinbox
+                    model: Interface.pList
+
+                    onCurrentTextChanged: portChanged(portsspinbox.currentText)
+                }
+
+                Button{
+                    id: connectbutton
+                    text: "Connect"
+                    onClicked: connectbutton_pressed()
+                }
 
             }
 
-            Button{
-                id: connectbutton
-                text: "Connect"
+            TextEdit {
+                id: textEdit
+
+                text: qsTr("- - -")
+                font.pixelSize: 12
+
+                anchors.left: portsspinbox.left
+                anchors.right: window.right
 
             }
-
         }
+
     }
 
-    } // End MainLayout (Row)
+    // End MainLayout (Row)
 
 }
