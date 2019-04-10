@@ -78,12 +78,14 @@ class ProgressInterface(QObject):
 
 class Thread(QThread):
     newMessageReceived = Signal(str)
+    newToolpathMessageSent = Signal(float)
 
     def __init__(self):
         QThread.__init__(self)
         self.ReceiveMessageQueue = []
         self.SendMessageQueue = []
         self.port = None
+        self.sendToolpathFlag = False
 
     def sendMessage(self, message):
         if (isinstance(message, str)):
@@ -97,9 +99,11 @@ class Thread(QThread):
         if len(self.ReceiveMessageQueue) > 1000:
             self.ReceiveMessageQueue.pop(0)
 
+    def sendToolpath(self, path):
+        self.path = path
+        self.sendToolpathFlag = True
+
     def sendtoolpathbutton_handler(self, path):
-        self.quit()
-        self.wait()
         path = re.sub(r'file:///', '', self.path)
         print(path)
 
@@ -116,6 +120,7 @@ class Thread(QThread):
                     if r is not None:
                         if "End" in r or "Reached" in r:
                             #self.pValue._setNewValue(i/(len(content)-1))
+
                             break
                         else:
                             r = str(self.port.readline())
@@ -126,10 +131,34 @@ class Thread(QThread):
     def run(self):
         print("Go")
         while 1:
-            tmp = self.port.readline()
-            self.newMessage(tmp)
-            if len(self.SendMessageQueue) > 0:
-                self.sendMessage(self.SendMessageQueue.pop(0))
+            if self.sendToolpathFlag is False:
+                tmp = self.port.readline()
+                self.newMessage(tmp)
+                if len(self.SendMessageQueue) > 0:
+                    self.sendMessage(self.SendMessageQueue.pop(0))
+            elif(self.sendToolpathFlag is True):
+                path = re.sub(r'file:///', '', self.path)
+                print(path)
+
+                with open(path) as f:
+                    content = f.readlines()
+                    for i in range(0, len(content) - 1):
+                        content[i] = content[i].strip()
+                        tmp = content[i]
+                        self.sendMessage(tmp)
+                        self.newMessage(tmp)
+                        r = str(self.port.readline())
+                        self.newMessage(r)
+                        while True:
+                            if "End" in r or "Reached" in r:
+                                # self.pValue._setNewValue(i/(len(content)-1))
+                                self.newToolpathMessageSent.emit(i / (len(content) - 1))
+                                break
+                            else:
+                                r = str(self.port.readline())
+                                self.newMessage(r)
+                    self.newToolpathMessageSent.emit(1)
+                self.sendToolpathFlag = False
 
 
 class ToolThread(QThread):
@@ -213,6 +242,7 @@ class PortInterface(QThread, QObject):
         self.rootObject.sendtoolpathbutton_pressed.connect(self.sendtoolpathbutton_handler)
         self.portTimer.timeout.connect(self.portTimer_timeout)
         self.Thread.newMessageReceived.connect(self.newMessageReceived_Handler)
+        self.Thread.newToolpathMessageSent.connect(self.newToolpathMessageSend_Handler)
 
         self.portTimer.start(500)
 
@@ -228,19 +258,19 @@ class PortInterface(QThread, QObject):
         view.rootContext().setContextProperty("ProgressInterface", self.pValue)
 
 
-
+    def newToolpathMessageSend_Handler(self, value):
+        print(value)
+        self.pValue._setNewValue(value)
 
 
     def newMessageReceived_Handler(self, message):
         self.loglist._appendLog(str(message))
 
     def sendtoolpathbutton_handler(self, path):
-        self.Thread.path = path
-        self.Thread.port = self.port
-        self.Thread.start()
         if not self.connectedFlag:
             print("Not Connected")
             return
+        self.Thread.sendToolpath(path)
 
         # path = re.sub(r'file:///', '', path)
         # print(path)
