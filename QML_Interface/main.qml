@@ -8,7 +8,7 @@ Page {
     id: window
     visible: true
     width: 640
-    height: 300
+    height: 400
     title: qsTr("Hello World")
 
 
@@ -105,6 +105,15 @@ Page {
                 }
             }
 
+            ProgressBar {
+                id: progressBar
+                width: toolpathbutton.width
+                height: 16
+                value: ProgressInterface.pValue
+
+
+            }
+
             FileDialog{
                 id: filedialog
                 title: "Chose A Toolpath File"
@@ -114,8 +123,10 @@ Page {
                 }
             }
 
+
             RowLayout {
                 id: rowLayout
+                anchors.top: progressBar.bottom
                 width: 100
                 height: 100
 
@@ -136,19 +147,22 @@ Page {
 
 
 
+
+
         } // End Left Layout
 
         Column{
+            id: rightlayout
             spacing: 2
             Layout.column: 1
-            anchors.right: window.right
+            Layout.fillWidth: parent
 
             RowLayout{
-
                 spacing: 5
+
                 ComboBox{
                     id: portsspinbox
-                    model: Interface.pList
+                    model: PortInterface.pList
 
                     onCurrentTextChanged: portChanged(portsspinbox.currentText)
                 }
@@ -161,20 +175,60 @@ Page {
 
             }
 
-            TextEdit {
-                id: textEdit
+            Frame {
+                id: frame
+                height: 160
+                width: 320
 
-                text: qsTr("- - -")
-                font.pixelSize: 12
+                ScrollView{
+                    x: -5
+                    y: -6
+                    height: 148
+                    width: 306
+                    anchors.right: window.right
+                    TextArea {
+                        id: logtext
+                        x: -10
+                        y: -6
+                        width: 306
+                        height: 128
 
-                anchors.left: portsspinbox.left
-                anchors.right: window.right
+                        wrapMode: TextEdit.Wrap
+                        text: this.append(LogInterface.lastElement)
 
+                        font.pixelSize: 9
+                        Layout.fillWidth: rightlayout
+                    }
+                }
             }
+
+
+
         }
+
 
     }
 
     // End MainLayout (Row)
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
