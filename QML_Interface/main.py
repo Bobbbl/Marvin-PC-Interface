@@ -252,32 +252,6 @@ class PortInterface(QThread, QObject):
             return
         self.Thread.sendToolpath(path)
 
-        # path = re.sub(r'file:///', '', path)
-        # print(path)
-        #
-        # with open(path) as f:
-        #     content = f.readlines()
-        #     for i in range(0, len(content) - 1):
-        #         content[i] = content[i].strip()
-        #         tmp = content[i]
-        #         #self.sendMessage(tmp)
-        #         self.Thread.SendMessageQueue.append(tmp)
-        #         #r = str(self.port.readline())
-        #         r = str(self.port.readline())
-        #         print(r)
-        #         while True:
-        #             if r is not None:
-        #                 if "End" in r or "Reached" in r:
-        #                     self.pValue._setNewValue(i/(len(content)-1))
-        #                     break
-        #                 else:
-        #                     #r = str(self.port.readline())
-        #                     r = self.getMessage()
-        #             else:
-        #                 r = self.getMessage()
-        #
-        #             time.sleep(0.1)
-
     def getMessage(self):
         if len(self.Thread.ReceiveMessageQueue) > 0:
             return str(self.Thread.ReceiveMessageQueue.pop(0))
@@ -295,6 +269,7 @@ class PortInterface(QThread, QObject):
             self.port.close()
             self.loglist._appendLog("Disconnected")
             self.connectedFlag = False
+            self.Thread.sendToolpathFlag = False
             return
 
         if self.currentPort is not None:
