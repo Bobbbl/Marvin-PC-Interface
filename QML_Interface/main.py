@@ -100,33 +100,13 @@ class Thread(QThread):
             self.ReceiveMessageQueue.pop(0)
 
     def sendToolpath(self, path):
-        self.path = path
-        self.sendToolpathFlag = True
+        if self.sendToolpathFlag is not True:
+            self.path = path
+            self.sendToolpathFlag = True
+        else:
+            self.newMessage("Toolpath Already Running - Please Wait Or Disconnect")
 
-    def sendtoolpathbutton_handler(self, path):
-        path = re.sub(r'file:///', '', self.path)
-        print(path)
 
-        with open(path) as f:
-            content = f.readlines()
-            for i in range(0, len(content) - 1):
-                content[i] = content[i].strip()
-                tmp = content[i]
-                #self.sendMessage(tmp)
-                self.SendMessageQueue.append(tmp)
-                r = str(self.port.readline())
-                print(r)
-                while True:
-                    if r is not None:
-                        if "End" in r or "Reached" in r:
-                            #self.pValue._setNewValue(i/(len(content)-1))
-
-                            break
-                        else:
-                            r = str(self.port.readline())
-                            #r = self.getMessage()
-                    else:
-                        r = self.getMessage()
 
     def run(self):
         print("Go")
