@@ -20,6 +20,9 @@ Page {
     signal sendtoolpathbutton_pressed(string path);
     signal portChanged(string name);
     signal connectbutton_pressed;
+    signal spindelbutton_pressed(string rpm);
+    signal zbuttonactivated;
+    signal zbuttoncanceld;
 
     Row{
         id: mainlayout
@@ -126,13 +129,16 @@ Page {
 
             RowLayout {
                 id: rowLayout
-                anchors.top: progressBar.bottom
+                //anchors.top: progressBar.bottom
                 width: 100
                 height: 100
 
                 Button {
                     id: spindelbutton
                     text: qsTr("Spindel")
+                    onClicked: {
+                        spindelbutton_pressed(spindeltext.text)
+                    }
                 }
 
                 TextEdit {
@@ -143,6 +149,73 @@ Page {
                     horizontalAlignment: Text.AlignRight
                     font.pixelSize: 12
                 }
+            }
+
+            RowLayout {
+                id: rowLayout2
+                //anchors.top: rowLayout.bottom
+                width: 100
+                height: 100
+
+
+                DelayButton {
+                     id: zdelaybutton
+                     checked: false
+                     text: qsTr("Z")
+
+                     onActivated: zbuttonactivated()
+                     onActionChanged: zbuttoncanceld()
+
+
+                     contentItem: Text {
+                         text: zdelaybutton.text
+                         font: zdelaybutton.font
+                         opacity: enabled ? 1.0 : 0.3
+                         color: "white"
+                         horizontalAlignment: Text.AlignHCenter
+                         verticalAlignment: Text.AlignVCenter
+                         elide: Text.ElideRight
+                     }
+
+                     background: Rectangle {
+                         implicitWidth: 50
+                         implicitHeight: 50
+                         opacity: enabled ? 1 : 0.3
+                         color: zdelaybutton.down ? "#17a81a" : "#21be2b"
+                         radius: size / 2
+
+                         readonly property real size: Math.min(zdelaybutton.width, zdelaybutton.height)
+                         width: size
+                         height: size
+                         anchors.centerIn: parent
+
+
+                         Canvas {
+                             id: canvas
+                             anchors.fill: parent
+
+                             Connections {
+                                 target: zdelaybutton
+                                 onProgressChanged: canvas.requestPaint()
+
+                             }
+
+                             onPaint: {
+                                 var ctx = getContext("2d")
+                                 ctx.clearRect(0, 0, width, height)
+                                 ctx.strokeStyle = "white"
+                                 ctx.lineWidth = parent.size / 20
+                                 ctx.beginPath()
+                                 var startAngle = Math.PI / 5 * 3
+                                 var endAngle = startAngle + zdelaybutton.progress * Math.PI / 5 * 9
+                                 ctx.arc(width / 2, height / 2, width / 2 - ctx.lineWidth / 2 - 2, startAngle, endAngle)
+                                 ctx.stroke()
+                             }
+                         }
+                     }
+                 }
+
+
             }
 
 
@@ -207,6 +280,11 @@ Page {
         }
 
 
+    }
+
+    Connections {
+        target: zdelaybutton
+        onActionChanged: print("clicked")
     }
 
     // End MainLayout (Row)

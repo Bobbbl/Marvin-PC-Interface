@@ -201,6 +201,7 @@ class PortInterface(QThread, QObject):
         self.connectedFlag = False
         self.Thread = Thread()
         self.toolThread = ToolThread()
+        self.zupFlag = True
 
 
 
@@ -223,6 +224,9 @@ class PortInterface(QThread, QObject):
         self.portTimer.timeout.connect(self.portTimer_timeout)
         self.Thread.newMessageReceived.connect(self.newMessageReceived_Handler)
         self.Thread.newToolpathMessageSent.connect(self.newToolpathMessageSend_Handler)
+        self.rootObject.spindelbutton_pressed.connect(self.spindelButtonPressed_Handler)
+        self.rootObject.zbuttonactivated.connect(self.activated_Handler)
+        self.rootObject.zbuttoncanceld.connect(self.canceled_Handler)
 
         self.portTimer.start(500)
 
@@ -237,9 +241,21 @@ class PortInterface(QThread, QObject):
         view.rootContext().setContextProperty("LogInterface", self.loglist)
         view.rootContext().setContextProperty("ProgressInterface", self.pValue)
 
+    def activated_Handler(self):
+        print("Activated")
+        if self.zupFlag is True:
+            self.Thread.sendMessage("Z;0@")
+        elif self.zupFlag is False:
+            self.Thread.sendMessage("Z;1@")
+
+    def canceled_Handler(self):
+        print("Canceled")
+
+    def spindelButtonPressed_Handler(self, rpm):
+        self.Thread.sendMessage("CS;{}@".format(rpm))
+
 
     def newToolpathMessageSend_Handler(self, value):
-        print(value)
         self.pValue._setNewValue(value)
 
 
@@ -257,9 +273,6 @@ class PortInterface(QThread, QObject):
             return str(self.Thread.ReceiveMessageQueue.pop(0))
         else:
             return None
-
-
-
 
     def portsspinbox_handler(self, name):
         self.currentPort = name
@@ -326,18 +339,23 @@ class PortInterface(QThread, QObject):
             self.messageSent.emit(message)
 
     def upbutton_handler(self):
-        self.loglist._appendLog("Up")
+        # self.loglist._appendLog("Up")
+        self.Thread.sendMessage("XYF;0;1;100@")
 
     def downbutton_handler(self):
-        self.loglist._appendLog("Down")
+        # self.loglist._appendLog("Down")
+        self.Thread.sendMessage("XYF;0;-1;100@")
 
     def leftbutton_handler(self):
-        self.loglist._appendLog("Left")
+        # self.loglist._appendLog("Left")
+        self.Thread.sendMessage("XYF;1;0;100@")
 
     def rightbutton_handler(self):
-        self.loglist._appendLog("Right")
+        # self.loglist._appendLog("Right")
+        self.Thread.sendMessage("XYF;-1;0;100@")
 
     def stopbutton_handler(self):
+        self.Thread.sendMessage("STOP")
         self.loglist._appendLog("Stop")
 
 
